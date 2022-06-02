@@ -53,8 +53,8 @@ class MahasiswaController extends Controller
             'nama_univ' => 'required',
 
         ]);
-        $penilaian = DB::table('seleksi_mahasiswa2')->select('tahun_akademik')->where('id_penilaian', $request->id_penilaian)->first();
-        $thn = $penilaian->tahun_akademik;
+        $penilaian = DB::table('seleksi_mahasiswa2')->where('id_penilaian', $request->id_penilaian)->first();
+        $jurusan = DB::table('jurusan')->where('id_jurusan', $request->id_jurusan)->first();
         DB::table('mahasiswa_asing')->insert([
             'name_mhs' => $request->name_mhs,
             'npm_mhs' => $request->npm_mhs,
@@ -66,26 +66,45 @@ class MahasiswaController extends Controller
             'nama_univ' => $request->nama_univ,
         ]);
         if ($request->kelas == 'reg') {
-            penilaian2::where('id_penilaian', $request->id_penilaian)
+            if ($penilaian->prodi == '') {
+                penilaian2::where('id_penilaian', $request->id_penilaian)
+                ->update([
+                    'prodi' => $jurusan->nama_jurusan,
+                    'jml_mhs_asing_aktif' => DB::raw('jml_mhs_asing_aktif+1'),
+                    'jml_mhs_asing_full' => DB::raw('jml_mhs_asing_full+1')
+                ]);
+            }else{
+                penilaian2::where('id_penilaian', $request->id_penilaian)
                 ->update([
                     'jml_mhs_asing_aktif' => DB::raw('jml_mhs_asing_aktif+1'),
                     'jml_mhs_asing_full' => DB::raw('jml_mhs_asing_full+1')
                 ]);
+            }
         } else {
-            penilaian2::where('id_penilaian', $request->id_penilaian)
+            if ($penilaian->prodi == '') {
+                penilaian2::where('id_penilaian', $request->id_penilaian)
+                ->update([
+                    'prodi' => $jurusan->nama_jurusan,
+                    'jml_mhs_asing_aktif' => DB::raw('jml_mhs_asing_aktif+1'),
+                    'jml_mhs_asing_part' => DB::raw('jml_mhs_asing_part+1')
+                ]);
+            } else {
+                penilaian2::where('id_penilaian', $request->id_penilaian)
                 ->update([
                     'jml_mhs_asing_aktif' => DB::raw('jml_mhs_asing_aktif+1'),
                     'jml_mhs_asing_part' => DB::raw('jml_mhs_asing_part+1')
                 ]);
+            }
+            
         }
         $isExist = Akumulasi::select("*")
-            ->where("tahun_akademik", $thn)
+            ->where("tahun_akademik", )
             ->doesntExist();
 
         if ($isExist) {
             if ($request->keterangan == 'pindahan') {
                 DB::table('akumulasi')->insert([
-                    'tahun_akademik' => $thn,
+                    'tahun_akademik' => $penilaian->tahun_akademik,
                     'jml_calon_mhs_baru_reguler' => '0',
                     'jml_calon_mhs_baru_transfer' => '0',
                     'jml_calon_mhs_aktif_reguler' => '0',
@@ -95,7 +114,7 @@ class MahasiswaController extends Controller
                 ]);
             } else {
                 DB::table('akumulasi')->insert([
-                    'tahun_akademik' => $thn,
+                    'tahun_akademik' => $penilaian->tahun_akademik,
                     'jml_calon_mhs_baru_reguler' => '0',
                     'jml_calon_mhs_baru_transfer' => '0',
                     'jml_calon_mhs_aktif_reguler' => '0',
@@ -167,6 +186,7 @@ class MahasiswaController extends Controller
         if ($request->daya_tampung >= $request->jml_calon_mhs_pendaftar) {
             DB::table('seleksi_mahasiswa2')->insert([
                 'tahun_akademik' => $request->tahun_akademik,
+                'prodi' => '',
                 'jml_mhs_asing_aktif' => '0',
                 'jml_mhs_asing_full' => '0',
                 'jml_mhs_asing_part' => '0',

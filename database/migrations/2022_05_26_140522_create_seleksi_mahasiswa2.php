@@ -16,6 +16,7 @@ class CreateSeleksiMahasiswa2 extends Migration
         Schema::create('seleksi_mahasiswa2', function (Blueprint $table) {
             $table->increments('id_penilaian');
             $table->string('tahun_akademik');
+            $table->string('prodi');
             $table->string('jml_mhs_asing_aktif');
             $table->string('jml_mhs_asing_full');
             $table->string('jml_mhs_asing_part');
